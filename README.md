@@ -16,13 +16,19 @@ This repository contains a Google Apps Script designed to filter and delete spam
 3. **Save the Project**:
    - Save the project with a descriptive name.
 
-### Step 2: Verify the Script
+### Step 2: Enable Gmail API
+
+1. **Enable Advanced Services**:
+   - In the Apps Script Editor, go to "Services" in the sidebar.
+   - Enable the "Gmail API".
+
+### Step 3: Verify the Script
 
 1. **Run the Test Function**:
    - Execute the `testExtractAndLogSenderNamesWithEncodedEmojis` function to log the sender names containing encoded emojis.
    - Check the logs to ensure the correct emails are identified.
 
-### Step 3: Set Up Time-Driven Triggers
+### Step 4: Set Up Time-Driven Triggers
 
 #### Option 1: Move Emails to Trash
 
@@ -31,7 +37,7 @@ This repository contains a Google Apps Script designed to filter and delete spam
    - Click on "Add Trigger" at the bottom right.
 
 2. **Configure the Trigger**:
-   - Choose which function to run: `deleteSpamEmailsWithEncodedEmojisInSender`.
+   - Choose which function to run: `moveToTrashSpamEmailsWithEncodedEmojisInSender`.
    - Choose which deployment should run: Head.
    - Select event source: Time-driven.
    - Select type of time-based trigger: Choose the frequency that suits your needs (e.g., daily, hourly).
@@ -58,8 +64,9 @@ This repository contains a Google Apps Script designed to filter and delete spam
 
 ## Script Details
 
-- `deleteSpamEmailsWithEncodedEmojisInSender`: Moves the matching emails to trash.
-- `permanentlyDeleteSpamEmailsWithEncodedEmojisInSender`: Permanently deletes the matching emails.
-- `extractSenderName`: Extracts the sender name from the raw email content.
+- `moveToTrashSpamEmailsWithEncodedEmojisInSender`: Moves the matching emails to trash.
+- `permanentlyDeleteSpamEmailsWithEncodedEmojisInSender`: Moves the matching emails to trash and then permanently deletes them by targeting their specific IDs using the Gmail API.
+- `deleteEmailsInTrash`: Uses the Gmail API to permanently delete specific emails from the trash.
+- `extractSenderName`: Extracts the sender name from raw email content.
 - `containsEncodedEmoji`: Checks if the sender name contains any encoded emoji sequences.
 - `testExtractAndLogSenderNamesWithEncodedEmojis`: Logs sender names for verification.
