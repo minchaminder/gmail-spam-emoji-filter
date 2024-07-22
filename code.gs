@@ -11,7 +11,26 @@ function deleteSpamEmailsWithEncodedEmojisInSender() {
       
       if (containsEncodedEmoji(senderName)) {
         Logger.log(senderName); // Log only if the sender name contains encoded emoji
-        messages[j].moveToTrash();
+        messages[j].moveToTrash(); // Move the email to trash
+      }
+    }
+  }
+}
+
+function permanentlyDeleteSpamEmailsWithEncodedEmojisInSender() {
+  // Get the spam threads
+  var spamThreads = GmailApp.getSpamThreads();
+
+  for (var i = 0; i < spamThreads.length; i++) {
+    var messages = spamThreads[i].getMessages();
+
+    for (var j = 0; j < messages.length; j++) {
+      var rawContent = messages[j].getRawContent();
+      var senderName = extractSenderName(rawContent);
+
+      if (containsEncodedEmoji(senderName)) {
+        Logger.log(senderName); // Log only if the sender name contains encoded emoji
+        messages[j].deleteMessage(); // Permanently delete the email
       }
     }
   }
