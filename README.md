@@ -1,6 +1,8 @@
 # Gmail Spam Emoji Filter
 
 This repository contains a Google Apps Script designed to filter and delete spam emails based on the presence of encoded emojis in the sender's name. The script scans emails in the spam folder and either moves them to trash or permanently deletes them, depending on the function you choose to run.
+
+
 ![image](https://github.com/user-attachments/assets/5da4aa12-3d24-44ab-8bb3-cff85857477d)
 
 ## How to Use
