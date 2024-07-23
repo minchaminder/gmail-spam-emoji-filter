@@ -1,4 +1,7 @@
-function moveToTrashSpamEmailsWithEncodedEmojisInSender() {
+// Define where to look for emojis: "sender", "subject", "both", or "either"
+var searchScope = "either";
+
+function processSpamEmails() {
   var spamThreads = GmailApp.getSpamThreads();
 
   for (var i = 0; i < spamThreads.length; i++) {
@@ -7,16 +10,30 @@ function moveToTrashSpamEmailsWithEncodedEmojisInSender() {
     for (var j = 0; j < messages.length; j++) {
       var rawContent = messages[j].getRawContent();
       var senderName = extractSenderName(rawContent);
+      var subject = messages[j].getSubject();
+      var shouldProcess = false;
 
-      if (containsEncodedEmoji(senderName)) {
-        Logger.log("Moving to trash: " + senderName); // Log only if the sender name contains encoded emoji
-        messages[j].moveToTrash(); // Move the email to trash
+      Logger.log("Checking email from: " + senderName + " with subject: " + subject);
+
+      if (searchScope === "sender" && containsEncodedEmoji(senderName)) {
+        shouldProcess = true;
+      } else if (searchScope === "subject" && containsEmoji(subject)) {
+        shouldProcess = true;
+      } else if (searchScope === "both" && containsEncodedEmoji(senderName) && containsEmoji(subject)) {
+        shouldProcess = true;
+      } else if (searchScope === "either" && (containsEncodedEmoji(senderName) || containsEmoji(subject))) {
+        shouldProcess = true;
+      }
+
+      if (shouldProcess) {
+        Logger.log("Moving to trash: " + senderName + " - " + subject);
+        messages[j].moveToTrash();
       }
     }
   }
 }
 
-function permanentlyDeleteSpamEmailsWithEncodedEmojisInSender() {
+function permanentlyDeleteProcessedEmails() {
   var spamThreads = GmailApp.getSpamThreads();
   var emailsToDelete = [];
 
@@ -26,10 +43,24 @@ function permanentlyDeleteSpamEmailsWithEncodedEmojisInSender() {
     for (var j = 0; j < messages.length; j++) {
       var rawContent = messages[j].getRawContent();
       var senderName = extractSenderName(rawContent);
+      var subject = messages[j].getSubject();
+      var shouldDelete = false;
 
-      if (containsEncodedEmoji(senderName)) {
-        Logger.log("Preparing to delete: " + senderName); // Log only if the sender name contains encoded emoji
-        messages[j].moveToTrash(); // Move the email to trash
+      Logger.log("Checking email from: " + senderName + " with subject: " + subject);
+
+      if (searchScope === "sender" && containsEncodedEmoji(senderName)) {
+        shouldDelete = true;
+      } else if (searchScope === "subject" && containsEmoji(subject)) {
+        shouldDelete = true;
+      } else if (searchScope === "both" && containsEncodedEmoji(senderName) && containsEmoji(subject)) {
+        shouldDelete = true;
+      } else if (searchScope === "either" && (containsEncodedEmoji(senderName) || containsEmoji(subject))) {
+        shouldDelete = true;
+      }
+
+      if (shouldDelete) {
+        Logger.log("Preparing to delete: " + senderName + " - " + subject);
+        messages[j].moveToTrash();
         emailsToDelete.push(messages[j].getId());
       }
     }
@@ -37,14 +68,12 @@ function permanentlyDeleteSpamEmailsWithEncodedEmojisInSender() {
 
   Logger.log("Emails to delete: " + emailsToDelete.length);
   if (emailsToDelete.length > 0) {
-    // Permanently delete emails in the trash
     deleteEmailsInTrash(emailsToDelete);
   } else {
     Logger.log("No emails to delete.");
   }
 }
 
-// Helper function to permanently delete specific emails using Gmail API
 function deleteEmailsInTrash(emailIds) {
   if (!emailIds || emailIds.length === 0) {
     Logger.log("No email IDs provided for deletion.");
@@ -57,7 +86,7 @@ function deleteEmailsInTrash(emailIds) {
   emailIds.forEach(emailId => {
     const url = baseUrl + emailId;
     const options = {
-      method: 'delete',
+      method: 'DELETE',
       headers: {
         Authorization: `Bearer ${accessToken}`
       },
@@ -72,20 +101,22 @@ function deleteEmailsInTrash(emailIds) {
   });
 }
 
-// Helper function to extract sender name from raw content
 function extractSenderName(rawContent) {
   var senderMatch = rawContent.match(/From: (.*?)</);
   return senderMatch ? senderMatch[1].trim() : '';
 }
 
-// Helper function to check if the sender name contains any encoded emoji
 function containsEncodedEmoji(text) {
   const encodedEmojiRegex = /=\?utf-8\?Q\?.*?=([0-9A-F]{2})/i;
   return encodedEmojiRegex.test(text);
 }
 
-// Run a test to log the sender names for verification
-function testExtractAndLogSenderNamesWithEncodedEmojis() {
+function containsEmoji(text) {
+  const emojiRegex = /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F700}-\u{1F77F}]|[\u{1F780}-\u{1F7FF}]|[\u{1F800}-\u{1F8FF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA00}-\u{1FA6F}]|[\u{1FA70}-\u{1FAFF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u;
+  return emojiRegex.test(text);
+}
+
+function testExtractAndLogProcessedEmails() {
   var spamThreads = GmailApp.getSpamThreads();
 
   for (var i = 0; i < spamThreads.length; i++) {
@@ -94,9 +125,23 @@ function testExtractAndLogSenderNamesWithEncodedEmojis() {
     for (var j = 0; j < messages.length; j++) {
       var rawContent = messages[j].getRawContent();
       var senderName = extractSenderName(rawContent);
+      var subject = messages[j].getSubject();
+      var shouldLog = false;
 
-      if (containsEncodedEmoji(senderName)) {
-        Logger.log("Found encoded emoji: " + senderName); // Log only if the sender name contains encoded emoji
+      Logger.log("Checking email from: " + senderName + " with subject: " + subject);
+
+      if (searchScope === "sender" && containsEncodedEmoji(senderName)) {
+        shouldLog = true;
+      } else if (searchScope === "subject" && containsEmoji(subject)) {
+        shouldLog = true;
+      } else if (searchScope === "both" && containsEncodedEmoji(senderName) && containsEmoji(subject)) {
+        shouldLog = true;
+      } else if (searchScope === "either" && (containsEncodedEmoji(senderName) || containsEmoji(subject))) {
+        shouldLog = true;
+      }
+
+      if (shouldLog) {
+        Logger.log("Found encoded emoji: " + senderName + " - " + subject);
       }
     }
   }
