@@ -1,5 +1,7 @@
 // Define where to look for emojis: "sender", "subject", "both", or "either"
 var searchScope = "either";
+var logSpreadsheetId = "YOUR_SPREADSHEET_ID"; // Replace with your spreadsheet ID
+var logSheetName = "Logs"; // Name of the sheet where logs will be written
 
 function processSpamEmails() {
   var spamThreads = GmailApp.getSpamThreads();
@@ -13,7 +15,7 @@ function processSpamEmails() {
       var subject = messages[j].getSubject();
       var shouldProcess = false;
 
-      Logger.log("Checking email from: " + senderName + " with subject: " + subject);
+      logMessage("Checking email from: " + senderName + " with subject: " + subject);
 
       if (searchScope === "sender" && containsEncodedEmoji(senderName)) {
         shouldProcess = true;
@@ -26,7 +28,7 @@ function processSpamEmails() {
       }
 
       if (shouldProcess) {
-        Logger.log("Moving to trash: " + senderName + " - " + subject);
+        logMessage("Moving to trash: " + senderName + " - " + subject);
         messages[j].moveToTrash();
       }
     }
@@ -46,7 +48,7 @@ function permanentlyDeleteProcessedEmails() {
       var subject = messages[j].getSubject();
       var shouldDelete = false;
 
-      Logger.log("Checking email from: " + senderName + " with subject: " + subject);
+      logMessage("Checking email from: " + senderName + " with subject: " + subject);
 
       if (searchScope === "sender" && containsEncodedEmoji(senderName)) {
         shouldDelete = true;
@@ -59,24 +61,24 @@ function permanentlyDeleteProcessedEmails() {
       }
 
       if (shouldDelete) {
-        Logger.log("Preparing to delete: " + senderName + " - " + subject);
+        logMessage("Preparing to delete: " + senderName + " - " + subject);
         messages[j].moveToTrash();
         emailsToDelete.push(messages[j].getId());
       }
     }
   }
 
-  Logger.log("Emails to delete: " + emailsToDelete.length);
+  logMessage("Emails to delete: " + emailsToDelete.length);
   if (emailsToDelete.length > 0) {
     deleteEmailsInTrash(emailsToDelete);
   } else {
-    Logger.log("No emails to delete.");
+    logMessage("No emails to delete.");
   }
 }
 
 function deleteEmailsInTrash(emailIds) {
   if (!emailIds || emailIds.length === 0) {
-    Logger.log("No email IDs provided for deletion.");
+    logMessage("No email IDs provided for deletion.");
     return;
   }
 
@@ -94,9 +96,9 @@ function deleteEmailsInTrash(emailIds) {
     };
     try {
       const response = UrlFetchApp.fetch(url, options);
-      Logger.log(`Deleted email ID: ${emailId}, response: ${response.getContentText()}`);
+      logMessage(`Deleted email ID: ${emailId}, response: ${response.getContentText()}`);
     } catch (e) {
-      Logger.log(`Failed to delete email ID: ${emailId}, error: ${e.message}`);
+      logMessage(`Failed to delete email ID: ${emailId}, error: ${e.message}`);
     }
   });
 }
@@ -128,7 +130,7 @@ function testExtractAndLogProcessedEmails() {
       var subject = messages[j].getSubject();
       var shouldLog = false;
 
-      Logger.log("Checking email from: " + senderName + " with subject: " + subject);
+      logMessage("Checking email from: " + senderName + " with subject: " + subject);
 
       if (searchScope === "sender" && containsEncodedEmoji(senderName)) {
         shouldLog = true;
@@ -141,8 +143,14 @@ function testExtractAndLogProcessedEmails() {
       }
 
       if (shouldLog) {
-        Logger.log("Found encoded emoji: " + senderName + " - " + subject);
+        logMessage("Found encoded emoji: " + senderName + " - " + subject);
       }
     }
   }
+}
+
+function logMessage(message) {
+  var spreadsheet = SpreadsheetApp.openById(logSpreadsheetId);
+  var sheet = spreadsheet.getSheetByName(logSheetName) || spreadsheet.insertSheet(logSheetName);
+  sheet.appendRow([new Date(), message]);
 }

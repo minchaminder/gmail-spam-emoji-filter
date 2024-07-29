@@ -4,7 +4,16 @@ This repository contains a Google Apps Script designed to filter and delete spam
 
 ![image](https://github.com/user-attachments/assets/4cc384ab-5eb4-4557-bc34-7e78075e5123)
 
+### Changelog
 
+#### v1.1.0
+- **Feature**: Added logging functionality to Google Drive spreadsheet.
+   - **Explanation**: The script can now log email processing actions (checking, moving to trash, preparing to delete) to a specified Google Sheet for better tracking and debugging.
+   - **Instructions**:
+      1. **Create a New Spreadsheet**: Create a new Google Spreadsheet and note the spreadsheet ID.
+      2. **Set Variables**: In the script, set `logSpreadsheetId` to your spreadsheet ID and `logSheetName` to the desired sheet name.
+      3. **Use `logMessage` Function**: The script will automatically log messages to the specified sheet.
+     
 ## How to Use
 
 ### Step 1: Set Up Google Apps Script
