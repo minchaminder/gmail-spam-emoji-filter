@@ -6,6 +6,17 @@ This repository contains a Google Apps Script designed to filter and delete spam
 
 ### Changelog
 
+
+#### v1.1.1
+- **Enhancement**: Improved emoji detection in email processing script.
+   - **Explanation**: Updated the `containsEmoji` function to detect Quoted-Printable and Base64 encoded emojis, as well as visible emojis.
+- **Bug Fix**: Resolved issues with detecting encoded emojis in sender names.
+   - **Details**: Adjusted regex patterns for better detection.
+- **New Feature**: Added `logRawSubjectsInSpam` function.
+   - **Purpose**: Logs raw subject lines and sender names of all emails in the spam folder for debugging purposes.
+- **Configuration**: Added `enableLogging` variable to control logging behavior.
+   - **Details**: Logs now include both sender name and subject for processed emails.
+
 #### v1.1.0
 - **Feature**: Added logging functionality to Google Drive spreadsheet.
    - **Explanation**: The script can now log email processing actions (checking, moving to trash, preparing to delete) to a specified Google Sheet for better tracking and debugging.

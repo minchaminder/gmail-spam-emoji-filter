@@ -1,5 +1,7 @@
 // Define where to look for emojis: "sender", "subject", "both", or "either"
 var searchScope = "either";
+// Flag to enable or disable logging
+var enableLogging = true;
 var logSpreadsheetId = "YOUR_SPREADSHEET_ID"; // Replace with your spreadsheet ID
 var logSheetName = "Logs"; // Name of the sheet where logs will be written
 
@@ -17,13 +19,13 @@ function processSpamEmails() {
 
       logMessage("Checking email from: " + senderName + " with subject: " + subject);
 
-      if (searchScope === "sender" && containsEncodedEmoji(senderName)) {
+      if (searchScope === "sender" && containsEmoji(senderName)) {
         shouldProcess = true;
       } else if (searchScope === "subject" && containsEmoji(subject)) {
         shouldProcess = true;
-      } else if (searchScope === "both" && containsEncodedEmoji(senderName) && containsEmoji(subject)) {
+      } else if (searchScope === "both" && containsEmoji(senderName) && containsEmoji(subject)) {
         shouldProcess = true;
-      } else if (searchScope === "either" && (containsEncodedEmoji(senderName) || containsEmoji(subject))) {
+      } else if (searchScope === "either" && (containsEmoji(senderName) || containsEmoji(subject))) {
         shouldProcess = true;
       }
 
@@ -50,13 +52,13 @@ function permanentlyDeleteProcessedEmails() {
 
       logMessage("Checking email from: " + senderName + " with subject: " + subject);
 
-      if (searchScope === "sender" && containsEncodedEmoji(senderName)) {
+      if (searchScope === "sender" && containsEmoji(senderName)) {
         shouldDelete = true;
       } else if (searchScope === "subject" && containsEmoji(subject)) {
         shouldDelete = true;
-      } else if (searchScope === "both" && containsEncodedEmoji(senderName) && containsEmoji(subject)) {
+      } else if (searchScope === "both" && containsEmoji(senderName) && containsEmoji(subject)) {
         shouldDelete = true;
-      } else if (searchScope === "either" && (containsEncodedEmoji(senderName) || containsEmoji(subject))) {
+      } else if (searchScope === "either" && (containsEmoji(senderName) || containsEmoji(subject))) {
         shouldDelete = true;
       }
 
@@ -104,19 +106,23 @@ function deleteEmailsInTrash(emailIds) {
 }
 
 function extractSenderName(rawContent) {
-  var senderMatch = rawContent.match(/From: (.*?)</);
-  return senderMatch ? senderMatch[1].trim() : '';
-}
-
-function containsEncodedEmoji(text) {
-  const encodedEmojiRegex = /=\?utf-8\?Q\?.*?=([0-9A-F]{2})/i;
-  return encodedEmojiRegex.test(text);
+  if (!rawContent) {
+    return 'Unknown';
+  }
+  var senderMatch = rawContent.match(/From: (.*?)(\r?\n|$)/);
+  return senderMatch ? senderMatch[1].trim() : 'Unknown';
 }
 
 function containsEmoji(text) {
-  const emojiRegex = /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F700}-\u{1F77F}]|[\u{1F780}-\u{1F7FF}]|[\u{1F800}-\u{1F8FF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA00}-\u{1FA6F}]|[\u{1FA70}-\u{1FAFF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u;
-  return emojiRegex.test(text);
+  if (!text) {
+    return false;
+  }
+  const encodedEmojiRegex = /=\?utf-8\?(Q|B)\?.*?=/i;
+  const visibleEmojiRegex = /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F700}-\u{1F77F}]|[\u{1F780}-\u{1F7FF}]|[\u{1F800}-\u{1F8FF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA00}-\u{1FA6F}]|[\u{1FA70}-\u{1FAFF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u;
+  return encodedEmojiRegex.test(text) || visibleEmojiRegex.test(text);
 }
+
+
 
 function testExtractAndLogProcessedEmails() {
   var spamThreads = GmailApp.getSpamThreads();
@@ -132,13 +138,13 @@ function testExtractAndLogProcessedEmails() {
 
       logMessage("Checking email from: " + senderName + " with subject: " + subject);
 
-      if (searchScope === "sender" && containsEncodedEmoji(senderName)) {
+      if (searchScope === "sender" && containsEmoji(senderName)) {
         shouldLog = true;
       } else if (searchScope === "subject" && containsEmoji(subject)) {
         shouldLog = true;
-      } else if (searchScope === "both" && containsEncodedEmoji(senderName) && containsEmoji(subject)) {
+      } else if (searchScope === "both" && containsEmoji(senderName) && containsEmoji(subject)) {
         shouldLog = true;
-      } else if (searchScope === "either" && (containsEncodedEmoji(senderName) || containsEmoji(subject))) {
+      } else if (searchScope === "either" && (containsEmoji(senderName) || containsEmoji(subject))) {
         shouldLog = true;
       }
 
@@ -150,7 +156,28 @@ function testExtractAndLogProcessedEmails() {
 }
 
 function logMessage(message) {
-  var spreadsheet = SpreadsheetApp.openById(logSpreadsheetId);
-  var sheet = spreadsheet.getSheetByName(logSheetName) || spreadsheet.insertSheet(logSheetName);
-  sheet.appendRow([new Date(), message]);
+  if (enableLogging) {
+    var spreadsheet = SpreadsheetApp.openById(logSpreadsheetId);
+    var sheet = spreadsheet.getSheetByName(logSheetName) || spreadsheet.insertSheet(logSheetName);
+    sheet.appendRow([new Date(), message]);
+  }
+}
+
+function logRawSubjectsInSpam() {
+  var spamThreads = GmailApp.getSpamThreads();
+
+  for (var i = 0; i < spamThreads.length; i++) {
+    var messages = spamThreads[i].getMessages();
+
+    for (var j = 0; j < messages.length; j++) {
+      var rawContent = messages[j].getRawContent();
+      var subjectMatch = rawContent.match(/Subject: (.*?)(\r?\n|$)/);
+      var subject = subjectMatch ? subjectMatch[1].trim() : 'No Subject';
+
+      var senderMatch = rawContent.match(/From: (.*?)(\r?\n|$)/);
+      var senderName = senderMatch ? senderMatch[1].trim() : 'Unknown';
+
+      Logger.log("Raw Subject: " + subject + ", Raw Sender: " + senderName);
+    }
+  }
 }
